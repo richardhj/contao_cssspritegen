@@ -59,7 +59,7 @@ $GLOBALS['TL_DCA']['tl_theme']['fields']['spritegen_direction']		= array(
 	'label'						=> &$GLOBALS['TL_LANG']['tl_theme']['spritegen_direction'],
 	'exclude'					=> true,
 	'inputType'					=> 'select',
-	'options'					=> array(0=>'horizontal', 1=>'vertical'),
+	'options'					=> array(0, 1),
 	'eval'						=> array('mandatory'=>true, 'tl_class'=>'w50'),
 	'sql'						=> "varchar(64) NOT NULL default ''"
 );
