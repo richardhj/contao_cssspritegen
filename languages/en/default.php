@@ -5,7 +5,7 @@
  * 
  * Copyright (C) 2005-2012 Leo Feyer
  * 
- * @package   SpriteGenerator 
+ * @package   CssSpriteGenerator 
  * @author    Richard Henkenjohann 
  * @license   LGPL 
  * @copyright Richard Henkenjohann 2012 

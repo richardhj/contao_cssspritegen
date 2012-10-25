@@ -1,13 +1,14 @@
-<?php
+<?php 
 
 /**
  * Contao Open Source CMS
  * 
  * Copyright (C) 2005-2012 Leo Feyer
  * 
- * @package Core
- * @link    http://contao.org
- * @license http://www.gnu.org/licenses/lgpl-3.0.html LGPL
+ * @package   CssSpriteGenerator 
+ * @author    Richard Henkenjohann 
+ * @license   LGPL 
+ * @copyright Richard Henkenjohann 2012 
  */
 
 /**
@@ -82,7 +83,7 @@ class tl_theme_spritegen extends Backend
 {
 
 	/**
-	 * Import the back end user object
+	 * Initialize the system
 	 */
 	public function __construct()
 	{
@@ -90,10 +91,7 @@ class tl_theme_spritegen extends Backend
 	}
 
 	/**
-	 * Add an image to each record
-	 * @param array
-	 * @param string
-	 * @return string
+	 * Generate sprite from given data
 	 */
 	public function generateSprite(\DataContainer $row)
 	{
@@ -107,11 +105,9 @@ class tl_theme_spritegen extends Backend
 			return;
 		}
 
-		// Replace the numeric folder IDs
-		//$source = $objTheme->spritegen_source;
-
 		if ($objTheme->spritegen_enable != '')
 		{
+			// Replace the numeric folder IDs
 			$objFolder			= FilesModel::findByPk($objTheme->spritegen_source);
 			$objOutputFolder	= FilesModel::findByPk($objTheme->spritegen_output_folder);
 
@@ -122,25 +118,17 @@ class tl_theme_spritegen extends Backend
 
 				ini_set('memory_limit', '256M');
 
+				// Provide settings for \SpriteGen()
 				$cssSprites = new \SpriteGen();
 				$cssSprites->addImageFolder($input, $objTheme->spritegen_output_file);
 				$cssSprites->setOutputFolder($output);
 				$cssSprites->setCacheTime(0);
-
+				// Generate Sprite
 				$cssSprites->generateSprite($objTheme->spritegen_direction, $objTheme->spritegen_output_file, $objTheme->spritegen_output_width);
-
-				/*
-if(!$cssSprites->getStylesheet($objTheme->spritegen_direction, $objTheme->spritegen_output_file, $objTheme->spritegen_output_width))
-				{
-					\Message::addInfo(sprintf($GLOBALS['TL_LANG']['ERR']['filesize'], $maxlength_kb_readable));
-					$this->log('File "'.$file['name'].'" exceeds the maximum file size of '.$maxlength_kb_readable, 'Uploader uploadTo()', TL_ERROR);
-				}
-				else
-				{
-*/
+				
+					// Display success confirmation
 					\Message::addConfirmation($GLOBALS['TL_LANG']['MSC']['spritegen_successful']);
-					$this->log('Generated image and style sheet for sprite ' . $objTheme->spritegen_output_file, 'SpriteGen getStylesheet()', CRON);
-				/* } */
+					$this->log('Generated image and style sheet for sprite ' . $objTheme->spritegen_output_file, 'SpriteGen generateSprite()', CRON);
 			}
 		}
 	}
