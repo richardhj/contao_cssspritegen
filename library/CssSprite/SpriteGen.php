@@ -320,7 +320,7 @@ class SpriteGen extends \System
 
 		if ($useInAssetsFolderToo)
 		{
-			$this->strStylesheet = str_replace(array('files/', "\n\t", "\n", ': '), array('../../files/', '', '', ':'), $this->strStylesheet);
+			$this->strStylesheet = str_replace(array('files/', "\n\t", "\n", ': ', ' */'), array('../../files/', '', '', ':', " */\n"), $this->strStylesheet);
 			$this->cssFilename = str_replace('.css', '.assets.css', $this->cssFilename);
 			$this->saveCss();
 		}
