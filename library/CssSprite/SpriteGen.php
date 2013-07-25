@@ -1,82 +1,167 @@
-<?php 
+<?php
 
 /**
  * Contao Open Source CMS
- * 
+ *
  * Copyright (C) 2005-2012 Leo Feyer
- * 
- * @package   CssSpriteGenerator 
- * @author    Richard Henkenjohann 
- * @license   LGPL 
- * @copyright Richard Henkenjohann 2012 
+ *
+ * @package   CssSpriteGenerator
+ * @author    Richard Henkenjohann
+ * @license   LGPL
+ * @copyright Richard Henkenjohann 2012
  */
- 
+
 namespace CssSprite;
 
 
 /**
  * Creates a single file that contains all the images as well as the related css.
- * 
+ *
  * Usage:
- * 
- *	addImageFolder($folder)		– Add folder that contains images
- *	setOutputFolder($folder)	– Set output folder for image and style sheet
- *	setCacheTime($time)			– Set time until image will be regenerate (0 = no caching, < 0 = never regeneration)
- *	generateSprite([true=horizontal], [filename.png], [true=display width in style sheet])	- Provide stylesheet
+ *
+ *     $sprite = new SpriteGen();
+ *     $sprite->addImageFolder($folder);
+ *     $sprite->setOutputFolder($folder);
+ *     $sprite->generateSprite($outputFileName, 1, true, false);
  *
  * @package   Library
  * @author    Richard Henkenjohann / originally from <http://www.christophs-blog.de/2011/02/php-klasse-csssprites>
  * @copyright Richard Henkenjohann 2012
  */
 
-class SpriteGen
+class SpriteGen extends \System
 {
 
-	private $aFolderImage		= array();
-	private $sFolderOutput		= '';
+	/**
+	 * Source folder
+	 * @var array
+	 */
+	protected $arrFolders = array();
 
-	private $sStylesheet 		= '';
+	/**
+	 * Output folder
+	 * @var string
+	 */
+	protected $outputFolder = '';
 
-	private $sTempCssFilename	= 'csssprite.css';
+	/**
+	 * Output stylesheet
+	 * @var string
+	 */
+	protected $strStylesheet = '';
 
-	private $iCacheTime			= 60;
-	
+	/**
+	 * Possibility to use existing css selectors
+	 * @var bool
+	 */
+	protected $updateDatabase = false;
+
+	/**
+	 * Output css filename
+	 * @var string
+	 */
+	protected $cssFilename = 'csssprite.css';
+
+	/**
+	 * Selector index in assoc array
+	 * @var string
+	 */
+	protected $blobSelectorIndex = 'sg_css_selector';
+
+	/**
+	 * Image index in assoc array
+	 * @var string
+	 */
+	protected $blobImageIndex = 'sg_css_image';
+
+	/**
+	 * Cache time in seconds
+	 * @var int
+	 */
+	protected $iCacheTime = 60;
+
+
+	/**
+	 * Add folder with source images
+	 * @param string $folder
+	 */
 	public function addImageFolder($folder)
 	{
-		if(substr($folder, -1) != '/')
+		if (substr($folder, -1) != '/')
 		{
 			$folder .= '/';
 		}
-		$this->sFolderImage[] = $folder;
+
+		$this->arrFolders[] = $folder;
 	}
 
+
+	/**
+	 * Set folder for image and stylesheet output
+	 * @param string $folder
+	 */
 	public function setOutputFolder($folder)
 	{
-		if(substr($folder, -1) != '/')
+		if (substr($folder, -1) != '/')
 		{
 			$folder .= '/';
 		}
-		$this->sFolderOutput = $folder;
+		$this->outputFolder = $folder;
 	}
 
+
+	/**
+	 * Set cache time in seconds (0 = no caching; <0 = never regeneration)
+	 * @param int $time
+	 */
 	public function setCacheTime($time)
 	{
 		$this->iCacheTime = $time;
 	}
 
-	public function generateImage($directionX=true, $outputFileName, $outputWidth=true)
+
+	/**
+	 * Set selectors if already existing and updates the database if desired
+	 * @param bool $blnUseDatabase
+	 * @param array $arrBlob
+	 * @param bool $blnUpdateDatabase
+	 */
+	public function useDatabase($blnUseDatabase, $arrBlob, $blnUpdateDatabase = true)
 	{
-		$output			= $this->sFolderOutput . $outputFileName;
-		$bgImage		= TL_FILES_URL . str_replace(TL_ROOT . '/', '', $output);
-
-		$neededWidth	= 0;
-		$neededHeight	= 0;
-
-		foreach($this->sFolderImage as $folder)
+		if ($blnUseDatabase)
 		{
-			if(!is_dir($folder))
+			if ($arrBlob[0][$this->blobSelectorIndex])
 			{
-				$this->sStylesheet .= "/**\n * Source Folder is not valid!!!\n */";
+				$this->databaseBlob = $arrBlob;
+			}
+
+			$this->updateDatabase = $blnUpdateDatabase;
+		}
+	}
+
+
+	/**
+	 * Generate the image and stylesheet
+	 * @param string $outputFileName
+	 * @param int $themeId
+	 * @param bool $useInAssetsFolderToo
+	 * @param bool $directionX
+	 * @param bool $outputWidth
+	 */
+	public function generateImage($outputFileName, $themeId = 0, $useInAssetsFolderToo = false, $directionX = true, $outputWidth = true)
+	{
+		$output = $this->outputFolder . $outputFileName;
+		$bgImage = TL_FILES_URL . str_replace(TL_ROOT . '/', '', $output);
+
+		$neededWidth = 0;
+		$neededHeight = 0;
+
+		// Walk each line and set size of new image
+		foreach ($this->arrFolders as $folder)
+		{
+			if (!is_dir($folder))
+			{
+				$this->strStylesheet .= "/**\n * Source Folder is not valid!!!\n */";
 				$this->saveCss();
 				return;
 			}
@@ -85,7 +170,7 @@ class SpriteGen
 			{
 				while (false !== ($file = readdir($handle)))
 				{
-					if($file == '.' || $file == '..' || is_dir($folder . $file))
+					if ($file == '.' || $file == '..' || is_dir($folder . $file))
 					{
 						continue;
 					}
@@ -93,22 +178,22 @@ class SpriteGen
 					{
 						$size = getimagesize($folder . $file);
 					}
-					catch(Exception $ex)
+					catch (Exception $ex)
 					{
 						continue;
 					}
-					if($directionX)
+					if ($directionX)
 					{
 						$neededWidth += $size[0];
-						if($size[1] > $neededHeight)
+						if ($size[1] > $neededHeight)
 						{
 							$neededHeight = $size[1];
 						}
 					}
 					else
-					{							
+					{
 						$neededHeight += $size[1];
-						if($size[0] > $neededWidth)
+						if ($size[0] > $neededWidth)
 						{
 							$neededWidth = $size[0];
 						}
@@ -118,77 +203,99 @@ class SpriteGen
 				closedir($handle);
 			}
 		}
-		
-		if($neededWidth <= 0)
+
+		if ($neededWidth <= 0)
 		{
-			$this->sStylesheet .= "/**\n * Error while reading images, or no image found in directory!!!\n */";
+			$this->strStylesheet .= "/**\n * Error while reading images, or no image found in directory!!!\n */";
 			$this->saveCss();
 			return;
 		}
 
+		// Create image
 		$image = imagecreatetruecolor($neededWidth, $neededHeight);
 
 		imagesavealpha($image, true);
 
-		$white	= imagecolorallocate($image, 255, 255, 255);
-		$grey	= imagecolorallocate($image, 128, 128, 128);
-		$black	= imagecolorallocate($image, 0, 0, 0);
+		$white = imagecolorallocate($image, 255, 255, 255);
+		$grey = imagecolorallocate($image, 128, 128, 128);
+		$black = imagecolorallocate($image, 0, 0, 0);
 
 		imagefilledrectangle($image, 0, 0, 150, 25, $black);
 		$trans_colour = imagecolorallocatealpha($image, 0, 0, 0, 127);
 		imagefill($image, 0, 0, $trans_colour);
 
-		$this->sStylesheet .= '/* CSS sprite generator, generated ' . date('Y-m-d H:i') . " */\n";
+		$this->strStylesheet .= '/* CSS sprite generator, generated ' . date('Y-m-d H:i') . " */\n";
 
 		$currentX = 0;
 		$currentY = 0;
 
-		foreach($this->sFolderImage as $folder)
+		// Walk each line and create image as well as css chunks
+		foreach ($this->arrFolders as $folder)
 		{
 			if ($handle = opendir($folder))
 			{
-				while (false !== ($file = readdir($handle)))
+				for ($i = 0; false !== ($file = readdir($handle)); $i++)
 				{
-					if($file == '.' || $file == '..' || is_dir($folder . $file))
+					$filePath = $folder . $file;
+
+					if ($file == '.' || $file == '..' || is_dir($filePath))
 					{
+						$i--;
 						continue;
 					}
-					if(strtoupper(substr($folder . $file, -3)) == 'PNG')
+					if (strtoupper(substr($filePath, -3)) == 'PNG')
 					{
-						$source = imagecreatefrompng($folder . $file);
+						$source = imagecreatefrompng($filePath);
 					}
-					else if(strtoupper(substr($folder . $file, -3)) == 'JPG')
+					elseif (strtoupper(substr($filePath, -3)) == 'JPG')
 					{
-						$source = imagecreatefromjpeg($folder . $file);
+						$source = imagecreatefromjpeg($filePath);
 					}
-					else if(strtoupper(substr($folder . $file, -3)) == 'GIF')
+					elseif (strtoupper(substr($filePath, -3)) == 'GIF')
 					{
-						$source = imagecreatefromgif($folder . $file);
+						$source = imagecreatefromgif($filePath);
 					}
 					else
 					{
+						$i--;
 						continue;
 					}
 
-					$size		= getimagesize($folder . $file);
-					$cssClass	= str_replace(substr($file, -4), '', $file);
-										
+					$size = getimagesize($filePath);
+
+					// Import CSS selecotrs or write new
+					if ($this->databaseBlob[$i] !== null)
+					{
+						$cssSelector = utf8_decode_entities($this->databaseBlob[$i][$this->blobSelectorIndex]);
+					}
+					else
+					{
+						$cssSelector = '.' . str_replace(array('.', ' '), array('_', '_'), substr($file, 0, -4));
+						$databaseBlob[$i][$this->blobSelectorIndex] = $cssSelector;
+					}
+
 					//imageAlphaBlending($source, false);
 					//imageSaveAlpha($source, true);
 
 					//imagecopymerge($image, $source, $currentX, 0, 0,0, $size[0], $size[1], 100);
 					imagecopy($image, $source, $currentX, $currentY, 0, 0, $size[0], $size[1]);
 
-					if($outputWidth)
+					// Write CSS
+					if ($outputWidth)
 					{
-						$this->sStylesheet .= '.' . str_replace(array('.', ' '), array('_', '_'), $cssClass) . "{\n\tbackground: url(" . $bgImage . ") no-repeat;\n\tbackground-position: -" . $currentX . "px " . $currentY . "px;\n\twidth: " . $size[0] . "px;\n\theight: " . $size[1] . "px;\n}\n";
+						$this->strStylesheet .= $cssSelector . "\n{\n\tbackground: url(" . $bgImage . ") no-repeat;\n\tbackground-position: -" . $currentX . "px " . $currentY . "px;\n\twidth: " . $size[0] . "px;\n\theight: " . $size[1] . "px;\n}\n";
+						$databaseBlob[$i][$this->blobSelectorIndex] = $cssSelector;
+						$databaseBlob[$i][$this->blobImageIndex] = str_replace(TL_ROOT . '/', '', $filePath);
 					}
 					else
 					{
-						$this->sStylesheet .= '.' . str_replace(array('.', ' '), array('_', '_'), $cssClass) . "{\n\tbackground: url(" . $bgImage . ") no-repeat;\n\tbackground-position: -" . $currentX . "px -" . $currentY . "px;\n}\n";
+						$this->strStylesheet .= $cssSelector . "\n{\n\tbackground: url(" . $bgImage . ") no-repeat;\n\tbackground-position: -" . $currentX . "px -" . $currentY . "px;\n}\n";
+						$databaseBlob[$i][$this->blobSelectorIndex] = $cssSelector;
+						$databaseBlob[$i][$this->blobImageIndex] = str_replace(TL_ROOT . '/', '', $filePath);
 					}
 
-					if($directionX)
+					// Update current background position
+					if ($directionX)
 					{
 						$currentX += $size[0];
 					}
@@ -204,40 +311,73 @@ class SpriteGen
 		imagepng($image, $output);
 		imagedestroy($image);
 
-		$this->saveCss();
-	}
-
-	public function saveCss()
-	{
-		$output = $this->sFolderOutput . $this->sTempCssFilename;
-
-		$fh = fopen($output, 'w') or die('can not open file');
-		fwrite($fh, $this->sStylesheet);
-		fclose($fh);
-	}
-
-	public function generateSprite($directionX=true, $outputFileName, $outputWidth=true)
-	{
-		if(!file_exists($this->sFolderOutput . $outputFileName))
+		if ($this->updateDatabase && $themeId > 0)
 		{
-			if(!is_dir($this->sFolderOutput))
+			$this->updateDatabaseBlob($themeId, $databaseBlob);
+		}
+
+		$this->saveCss();
+
+		if ($useInAssetsFolderToo)
+		{
+			$this->strStylesheet = str_replace(array('files/', "\n\t", "\n", ': '), array('../../files/', '', '', ':'), $this->strStylesheet);
+			$this->cssFilename = str_replace('.css', '.assets.css', $this->cssFilename);
+			$this->saveCss();
+		}
+	}
+
+
+	/**
+	 * Save the CSS file
+	 */
+	protected function saveCss()
+	{
+		$stylesheet = new \File(str_replace(TL_ROOT . '/', '', $this->outputFolder . $this->cssFilename));
+		$stylesheet->write($this->strStylesheet);
+		$stylesheet->close();
+	}
+
+
+	/**
+	 * Set the image->selector relation in database
+	 * @param $themeId
+	 * @param $databaseBlob
+	 */
+	protected function updateDatabaseBlob($themeId, $databaseBlob)
+	{
+		\Database::getInstance()->prepare("UPDATE tl_theme SET spritegen_selectors=? WHERE id=?")
+								->execute(serialize($databaseBlob), $themeId);
+	}
+
+
+	/**
+	 * Generate sprite while handling the cache time
+	 * @param string $outputFileName
+	 * @param int $themeId
+	 * @param bool $useInAssetsFolderToo
+	 * @param bool $directionX
+	 * @param bool $outputWidth
+	 */
+	public function generateSprite($outputFileName, $themeId = 0, $useInAssetsFolderToo = false, $directionX = true, $outputWidth = true)
+	{
+		if (!file_exists($this->outputFolder . $outputFileName))
+		{
+			if (!is_dir($this->outputFolder))
 			{
-				mkdir($this->sFolderOutput);
+				mkdir($this->outputFolder);
 			}
-			$this->generateImage($directionX, $outputFileName, $outputWidth);
+			$this->generateImage($outputFileName, $themeId, $useInAssetsFolderToo, $directionX, $outputWidth);
 		}
 		else
 		{
-			if(filemtime($this->sFolderOutput . $outputFileName) <= (time()-$this->iCacheTime))
+			if (filemtime($this->outputFolder . $outputFileName) <= (time() - $this->iCacheTime))
 			{
-				$this->generateImage($directionX, $outputFileName);
+				$this->generateImage($outputFileName, $themeId, $useInAssetsFolderToo, $directionX, $outputWidth);
 			}
 			else
 			{
-				$this->sStylesheet = file_get_contents($this->sFolderOutput . $this->sTempCssFilename);
+				$this->strStylesheet = file_get_contents($this->outputFolder . $this->cssFilename);
 			}
 		}
 	}
 }
-
-?>

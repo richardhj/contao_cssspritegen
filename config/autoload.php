@@ -1,22 +1,14 @@
-<?php 
+<?php
 
 /**
  * Contao Open Source CMS
  * 
- * Copyright (C) 2005-2012 Leo Feyer
+ * Copyright (C) 2005-2013 Leo Feyer
  * 
-<<<<<<< HEAD
- * @package CssSpriteGenerator
+ * @package Cssspritegen
  * @link    http://contao.org
  * @license http://www.gnu.org/licenses/lgpl-3.0.html LGPL
-=======
- * @package   CssSpriteGenerator 
- * @author    Richard Henkenjohann 
- * @license   LGPL 
- * @copyright Richard Henkenjohann 2012 
->>>>>>> Clean up
  */
-
 
 
 /**
@@ -34,5 +26,8 @@ ClassLoader::addNamespaces(array
 ClassLoader::addClasses(array
 (
 	// Library
-	'CssSprite\SpriteGen' => 'system/modules/cssspritegen/library/CssSprite/SpriteGen.php',
+	'CssSprite\SpriteGen'           => 'system/modules/cssspritegen/library/CssSprite/SpriteGen.php',
+
+	// Widgets
+	'CssSprite\SpriteGenImageField' => 'system/modules/cssspritegen/widgets/SpriteGenImageField.php',
 ));
