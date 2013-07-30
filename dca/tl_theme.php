@@ -110,6 +110,7 @@ $GLOBALS['TL_DCA']['tl_theme']['fields']['spritegen_selectors'] = array(
 	'sql'						=> "blob NULL"
 );
 
+
 /**
  * Class tl_theme_spritegen
  *
@@ -118,7 +119,7 @@ $GLOBALS['TL_DCA']['tl_theme']['fields']['spritegen_selectors'] = array(
  * @author     Richard Henkenjohann
  * @package    CssSpriteGenerator
  */
-class tl_theme_spritegen extends MultiColumnWizard
+class tl_theme_spritegen extends Backend
 {
 
 	/**

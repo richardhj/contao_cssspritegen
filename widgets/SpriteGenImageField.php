@@ -88,7 +88,7 @@ class SpriteGenImageField extends \Widget
 		if ($objImage->width <= $width && $objImage->height <= $height)
 		{
 			return $this->generateImage($objImage->path, $this->strName) .
-			       sprintf('<input type="text" name="%s" id="ctrl_%s" value="%s" style="display:none">',
+			       sprintf('<input type="hidden" name="%s" id="ctrl_%s" value="%s">',
 							$this->strName,
 							$this->strId,
 							$objImage->path);
@@ -96,7 +96,7 @@ class SpriteGenImageField extends \Widget
 		else
 		{
 			return $this->generateImage(\Image::get($objImage->path, $width, $height, $mode), $this->strName) .
-			       sprintf('<input type="text" name="%s" id="ctrl_%s" value="%s" style="display:none">',
+			       sprintf('<input type="hidden" name="%s" id="ctrl_%s" value="%s">',
 							$this->strName,
 							$this->strId,
 							$objImage->path);
